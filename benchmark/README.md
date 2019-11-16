@@ -22,10 +22,10 @@ Follow the instructions for registration and download the tool to local disk wit
         dbgen.exe -vf -s 300
         ```
         *Note*: Since there is no parallelization option for TPC-H dbgen, generating a 300GB dataset could take up to 40 hours to complete.
-        
+
     - After database population generation is completed, there should be 8 tables (customer, lineitem, nation, orders, part, partsupp, region, supplier) created with the .tbl extension.
 
-4. Convert TPC-H dataset to parquet format. 
+4. Convert TPC-H dataset to parquet format.
     - You can use a simple Spark [application](https://github.com/dotnet/spark/blob/master/benchmark/scala/src/main/scala/com/microsoft/tpch/ConvertTpchCsvToParquetApp.scala) to convert the TPC-H dataset to parquet format. You can run the following spark-submit command to submit the application, you can also adjust it according to format of [submitting application](https://spark.apache.org/docs/latest/submitting-applications.html).
 ```
         <spark-submit> --master local[*] --class com.microsoft.tpch.ConvertTpchCsvToParquetApp microsoft-spark-benchmark-<version>.jar <path-to-source-directory-with-TPCH-tables> <path-to-destination-directory-to-save-parquet-file>
@@ -60,9 +60,18 @@ TPCH timing results is written to stdout in the following form: `TPCH_Result,<la
     <true for sql tests, false for functional tests>
     ```
 
+    **Note**: Ensure that you build the worker and application with .NET Core 3.0 in order to run hardware acceleration queries.
+
+
 ## Python
 1. Upload [run_python_benchmark.sh](run_python_benchmark.sh) and all [python tpch benchmark](python/) files to the cluster.
-2. Run the benchmark by invoking:
+2. Install pyarrow and pandas on all nodes in the cluster. For example, if you are using Conda, you can use the following commands to install them.
+    ```shell
+    sudo /path/to/conda update --all
+    sudo /path/to/conda install pandas
+    sudo /path/to/conda install pyarrow
+    ```
+3. Run the benchmark by invoking:
     ```shell
     run_python_benchmark.sh \
     <number of cold iterations> \
@@ -74,6 +83,11 @@ TPCH timing results is written to stdout in the following form: `TPCH_Result,<la
     </path/to/dataset> \
     <number of iterations> \
     <true for sql tests, false for functional tests>
+    ```
+In order to run with Python 3.x (the default is 2.7) you will need to do the following on the driver node.
+1. Activate the Python 3.x environment, by changing the value of PYSPARK_PYTHON environment variable to point to the Python3 binary. This change can be made in the spark-env.sh conf file.
+    ```shell
+    export PYSPARK_PYTHON=${PYSPARK_PYTHON:-/path/to/python3}
     ```
 
 ## Scala

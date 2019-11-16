@@ -5,6 +5,7 @@
 using System;
 using Microsoft.Spark.Interop.Ipc;
 using Microsoft.Spark.Sql.Expressions;
+using Microsoft.Spark.Sql.Types;
 using Microsoft.Spark.Utils;
 
 namespace Microsoft.Spark.Sql
@@ -240,33 +241,36 @@ namespace Microsoft.Spark.Sql
         /// <param name="func">Wrapped UDF function</param>
         private void Register<TResult>(string name, Delegate func)
         {
+            Register<TResult>(name, func, UdfUtils.PythonEvalType.SQL_BATCHED_UDF);
+        }
+
+        /// <summary>
+        /// Helper function to register wrapped udf.
+        /// </summary>
+        /// <typeparam name="TResult">Return type of the udf</typeparam>
+        /// <param name="name">Name of the udf</param>
+        /// <param name="func">Wrapped UDF function</param>
+        /// <param name="evalType">The EvalType of the function.</param>
+        internal void Register<TResult>(string name, Delegate func, UdfUtils.PythonEvalType evalType)
+        {
             byte[] command = CommandSerDe.Serialize(
                 func,
                 CommandSerDe.SerializedMode.Row,
                 CommandSerDe.SerializedMode.Row);
 
-            JvmObjectReference pythonFunction =
-                UdfUtils.CreatePythonFunction(_jvmObject.Jvm, command);
-
-            var udf = new UserDefinedFunction(
-                _jvmObject.Jvm.CallConstructor(
-                    "org.apache.spark.sql.execution.python.UserDefinedPythonFunction",
-                    name,
-                    pythonFunction,
-                    GetDataType<TResult>(),
-                    (int)UdfUtils.GetPythonEvalType(),
-                    true // udfDeterministic
-                    ));
+            var udf = UserDefinedFunction.Create(
+                _jvmObject.Jvm,
+                name,
+                command,
+                evalType,
+                UdfUtils.GetReturnType(typeof(TResult)));
 
             _jvmObject.Invoke("registerPython", name, udf);
         }
 
         private JvmObjectReference GetDataType<T>()
         {
-            return (JvmObjectReference)_jvmObject.Jvm.CallStaticJavaMethod(
-                "org.apache.spark.sql.types.DataType",
-                "fromJson",
-                $"{UdfUtils.GetReturnType(typeof(T))}");
+            return DataType.FromJson(_jvmObject.Jvm, UdfUtils.GetReturnType(typeof(T)));
         }
     }
 }

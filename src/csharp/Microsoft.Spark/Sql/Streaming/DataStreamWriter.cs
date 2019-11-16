@@ -60,6 +60,18 @@ namespace Microsoft.Spark.Sql.Streaming
         }
 
         /// <summary>
+        /// Partitions the output by the given columns on the file system. If specified,
+        /// the output is laid out on the file system similar to Hive's partitioning scheme.
+        /// </summary>
+        /// <param name="colNames">Column names to partition by</param>
+        /// <returns>This DataStreamWriter object</returns>
+        public DataStreamWriter PartitionBy(params string[] colNames)
+        {
+            _jvmObject.Invoke("partitionBy", (object)colNames);
+            return this;
+        }
+
+        /// <summary>
         /// Adds an output option for the underlying data source.
         /// </summary>
         /// <param name="key">Name of the option</param>
@@ -115,6 +127,31 @@ namespace Microsoft.Spark.Sql.Streaming
         public DataStreamWriter Options(Dictionary<string, string> options)
         {
             _jvmObject.Invoke("options", options);
+            return this;
+        }
+
+        /// <summary>
+        /// Sets the trigger for the stream query.
+        /// </summary>
+        /// <param name="trigger">Trigger object</param>
+        /// <returns>This DataStreamReader object</returns>
+        public DataStreamWriter Trigger(Trigger trigger)
+        {
+            _jvmObject.Invoke("trigger", trigger);
+            return this;
+        }
+
+        /// <summary>
+        /// Specifies the name of the <see cref="StreamingQuery"/> 
+        /// that can be started with `start()`.
+        /// This name must be unique among all the currently active queries 
+        /// in the associated SQLContext.
+        /// </summary>
+        /// <param name="queryName">Query name</param>
+        /// <returns>This DataStreamReader object</returns>
+        public DataStreamWriter QueryName(string queryName)
+        {
+            _jvmObject.Invoke("queryName", queryName);
             return this;
         }
 
